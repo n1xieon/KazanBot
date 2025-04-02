@@ -15,7 +15,7 @@ RAW_OPTIONS = [
     ("Вылет: 3 апреля, 09:10", datetime(2025, 4, 3, 9, 10)),
     ("Прилёт: 3 апреля, 10:50", datetime(2025, 4, 3, 10, 50)),
     ("Отель: 3 апреля, 17:30", datetime(2025, 4, 3, 17, 30)),
-    ("Илья Койтов в щи на полу: 3 апреля, 22:30", datetime(2025, 4, 3, 22, 30))
+    ("Спааааать: 3 апреля, 22:30", datetime(2025, 4, 3, 22, 30))
 ]
 
 # Автогенерация безопасных callback_data
@@ -45,8 +45,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"Вы уже запустили отсчёт до: {deadline.strftime('%d.%m %H:%M')}\nОтправлю уведомление каждый час.",
                 reply_markup=build_menu()
             )
-
-            task = asyncio.create_task(start_countdown(context, user_id, deadline))
+            app = context.application
+            task = asyncio.create_task(start_countdown(app, user_id, deadline))
             user_tasks[user_id] = task
             return
 
@@ -107,26 +107,24 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.edit_message_text(text=f"Отлично! Отсчет до: {label}")
 
-    task = asyncio.create_task(start_countdown(context, user_id, selected_time))
+    app = context.application
+    task = asyncio.create_task(start_countdown(app, user_id, selected_time))
     user_tasks[user_id] = task
 
 
 # === Отсчет времени ===
-async def start_countdown(context: ContextTypes.DEFAULT_TYPE, user_id: int, deadline: datetime):
+async def start_countdown(app: Application, user_id: int, deadline: datetime):
     while True:
         now = datetime.now()
         if now >= deadline:
-            await context.bot.send_message(chat_id=user_id, text="Ура, Казань!!!!")
+            await app.bot.send_message(chat_id=user_id, text="Ура, Казань!!!!")
             user_deadlines.pop(user_id, None)
             user_tasks.pop(user_id, None)
-            context.user_data["state"] = STATE_IDLE
-            delete_user(user_id)
             break
         else:
             hours_left = int((deadline - now).total_seconds() // 3600)
             word = pluralize_hours(hours_left)
-            await context.bot.send_message(chat_id=user_id,
-                                           text=f"Осталось {hours_left} {word}!!")
+            await app.bot.send_message(chat_id=user_id, text=f"Осталось {hours_left} {word}!!")
             await asyncio.sleep(3600)
 
 
