@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -53,7 +54,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["state"] = STATE_SELECTING
     await update.message.reply_text("Скоро Казань!!\nВыбери время:", reply_markup=build_menu())
 
-
 def build_menu():
     keyboard = [[InlineKeyboardButton(text=label, callback_data=key)] for key, (label, _) in OPTIONS.items()]
     keyboard.append([
@@ -61,7 +61,6 @@ def build_menu():
         InlineKeyboardButton("🔄 Сменить время", callback_data="change")
     ])
     return InlineKeyboardMarkup(keyboard)
-
 
 def pluralize_hours(n):
     if 11 <= n % 100 <= 14:
@@ -72,7 +71,6 @@ def pluralize_hours(n):
         return "часа"
     else:
         return "часов"
-
 
 # === Обработка кнопок ===
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -111,7 +109,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     task = asyncio.create_task(start_countdown(app, user_id, selected_time))
     user_tasks[user_id] = task
 
-
 # === Отсчет времени ===
 async def start_countdown(app: Application, user_id: int, deadline: datetime):
     while True:
@@ -128,14 +125,12 @@ async def start_countdown(app: Application, user_id: int, deadline: datetime):
             await app.bot.send_message(chat_id=user_id, text=f"Осталось {hours_left} {word}!!")
             await asyncio.sleep(3600)
 
-
 # === Отмена отсчета ===
 async def cancel_countdown(user_id: int, context: ContextTypes.DEFAULT_TYPE):
     task = user_tasks.pop(user_id, None)
     if task:
         task.cancel()
     user_deadlines.pop(user_id, None)
-
 
 # === Главная функция ===
 def main():
@@ -145,7 +140,6 @@ def main():
     app.add_handler(CallbackQueryHandler(button))
     print("Бот запущен")
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
