@@ -120,6 +120,7 @@ async def start_countdown(app: Application, user_id: int, deadline: datetime):
             await app.bot.send_message(chat_id=user_id, text="Ура, Казань!!!!")
             user_deadlines.pop(user_id, None)
             user_tasks.pop(user_id, None)
+            delete_user(user_id)
             break
         else:
             hours_left = int((deadline - now).total_seconds() // 3600)
