@@ -78,6 +78,9 @@ def pluralize_hours(n):
     else:
         return "часов"
 
+def verb_hours(n):
+    return "остался" if n % 10 == 1 and not 11 <= n % 100 <= 14 else "осталось"
+
 
 # === Обработка кнопок ===
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,7 +133,8 @@ async def start_countdown(app: Application, user_id: int, deadline: datetime):
         else:
             hours_left = int((deadline - now).total_seconds() // 3600)
             word = pluralize_hours(hours_left)
-            await app.bot.send_message(chat_id=user_id, text=f"Осталось {hours_left} {word}!!")
+            verb = verb_hours(hours_left)
+            await app.bot.send_message(chat_id=user_id, text=f"{verb.capitalize()} {hours_left} {word}!!")
             await asyncio.sleep(3600)
 
 
