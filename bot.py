@@ -2,21 +2,24 @@ import asyncio
 import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from pytz import timezone
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from database import init_db, save_user, load_user, delete_user
-from pytz import timezone
 
 # === Загрузка переменных окружения ===
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# Исходный список опций
+# МСК таймзона
+MSK = timezone("Europe/Moscow")
+
+# Исходный список опций (по МСК)
 RAW_OPTIONS = [
-    ("Вылет: 3 апреля, 09:10", datetime(2025, 4, 3, 9, 10)),
-    ("Прилёт: 3 апреля, 10:50", datetime(2025, 4, 3, 10, 50)),
-    ("Отель: 3 апреля, 17:30", datetime(2025, 4, 3, 17, 30)),
-    ("Илья Койтов на полу в щи: 3 апреля, 22:30", datetime(2025, 4, 3, 22, 30))
+    ("Вылет: 3 апреля, 09:10", datetime(2025, 4, 3, 9, 10, tzinfo=MSK)),
+    ("Прилёт: 3 апреля, 10:50", datetime(2025, 4, 3, 10, 50, tzinfo=MSK)),
+    ("Отель: 3 апреля, 17:30", datetime(2025, 4, 3, 17, 30, tzinfo=MSK)),
+    ("Спааааать: 3 апреля, 22:30", datetime(2025, 4, 3, 22, 30, tzinfo=MSK))
 ]
 
 # Автогенерация безопасных callback_data
@@ -42,13 +45,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["state"] = state
 
         if state == STATE_COUNTDOWN:
-            # Переводим время в МСК
-            moscow_tz = timezone("Europe/Moscow")
-            deadline_msk = deadline.astimezone(moscow_tz)
-
             await update.message.reply_text(
-                f"Вы уже запустили отсчёт до: {deadline_msk.strftime('%d.%m %H:%M')} (МСК)\n"
-                "Отправлю уведомление каждый час.",
+                f"Вы уже запустили отсчёт до: {deadline.astimezone(MSK).strftime('%d.%m %H:%M')} (МСК)\n"
+                f"Отправлю уведомление каждый час.",
                 reply_markup=build_menu()
             )
             app = context.application
@@ -121,7 +120,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # === Отсчет времени ===
 async def start_countdown(app: Application, user_id: int, deadline: datetime):
     while True:
-        now = datetime.now()
+        now = datetime.now(MSK)
         if now >= deadline:
             await app.bot.send_message(chat_id=user_id, text="Ура, Казань!!!!")
             user_deadlines.pop(user_id, None)
